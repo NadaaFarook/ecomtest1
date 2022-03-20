@@ -2,6 +2,7 @@ import { v4 as uuid } from "uuid";
 import { Response } from "miragejs";
 import { formatDate } from "../utils/authUtils";
 import bcrypt from "bcryptjs";
+import { users } from "../db/users";
 const jwt = require("jsonwebtoken");
 
 /**
@@ -44,7 +45,7 @@ export const signupHandler = function (schema, request) {
     const createdUser = schema.users.create(newUser);
     const encodedToken = jwt.sign(
       { _id, email },
-      process.env.REACT_APP_JWT_SECRET
+      "TOKEN_SECRET"
     );
     return new Response(201, {}, { createdUser, encodedToken });
   } catch (error) {
@@ -66,8 +67,11 @@ export const signupHandler = function (schema, request) {
 
 export const loginHandler = function (schema, request) {
   const { email, password } = JSON.parse(request.requestBody);
+  console.log(email, password);
   try {
     const foundUser = schema.users.findBy({ email });
+    console.log("TOKEN_SECRET");
+    console.log(foundUser, "foundUser", users);
     if (!foundUser) {
       return new Response(
         404,
@@ -78,8 +82,9 @@ export const loginHandler = function (schema, request) {
     if (bcrypt.compareSync(password, foundUser.password)) {
       const encodedToken = jwt.sign(
         { _id: foundUser._id, email },
-        process.env.REACT_APP_JWT_SECRET
+        "TOKEN_SECRET"
       );
+      console.log(encodedToken, "encodeToken");
       foundUser.password = undefined;
       return new Response(200, {}, { foundUser, encodedToken });
     }
